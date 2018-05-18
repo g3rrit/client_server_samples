@@ -5,8 +5,9 @@
 #include <ws2tcpip.h>
 #include <stdlib.h>
 #include <stdio.h>
-
 #include <stdint.h>
+#include <inttypes.h>
+#include <time.h>
 
 
 // Need to link with Ws2_32.lib, Mswsock.lib, and Advapi32.lib
@@ -101,11 +102,21 @@ int main(int argc, char **argv)
 
 	uint8_t buffer[1024];
 	memset(buffer, 0, 1024);
-	unsigned int read_bytes = 0;
+	uint64_t read_bytes = 0;
 
+	int bps_t = 0;
+	int bps = 0;
+
+	uint64_t time_l = 0;
+	uint64_t time_n = 0;
+	float time_t = 0;
 
 	while ((read_bytes = fread(buffer, 1, 1024, file)) > 0)
 	{
+		time_n = clock();
+
+		time_t += ((float)(time_n - time_l))/(float)CLOCKS_PER_SEC;
+		time_l = time_n;
 
 		bytes = send(ConnectSocket, (const char*)buffer, read_bytes, 0);
 
@@ -119,24 +130,20 @@ int main(int argc, char **argv)
 
 		total_bytes += bytes;
 
-		printf("\rsent: %i", total_bytes);
+		bps_t += bytes;
+		if (time_t >= 1.)
+		{
+			bps = ((float)bps_t)/time_t;
+			time_t = .0;
+			bps_t = 0;
+		}
+
+		printf("\rsent: %14" PRIu64 " bytes | %10i B/s", total_bytes, bps);
 		memset(buffer, 0, 1024);
 	}
 
 	printf("\nfinished sending file\n");
 
-	/*
-	// Send an initial buffer
-	iResult = send(ConnectSocket, sendbuf, (int)strlen(sendbuf), 0);
-	if (iResult == SOCKET_ERROR) {
-	printf("send failed with error: %d\n", WSAGetLastError());
-	closesocket(ConnectSocket);
-	WSACleanup();
-	return 1;
-	}
-
-	printf("Bytes Sent: %ld\n", iResult);
-	*/
 
 	// shutdown the connection since no more data will be sent
 	iResult = shutdown(ConnectSocket, SD_SEND);

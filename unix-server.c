@@ -8,6 +8,8 @@
 #include <sys/socket.h>
 #include <netdb.h>
 #include <unistd.h>
+#include <inttypes.h>
+#include <time.h>
 
 
 int main(int argc, char **argv)
@@ -91,8 +93,21 @@ int main(int argc, char **argv)
     uint64_t total_bytes = 0;
 
     int bytes = 0;
+
+    int bps_t = 0;
+    int bps = 0;
+
+    uint64_t time_l = 0;
+    uint64_t time_n = 0;
+    float time_t = 0;
+
     do
     {
+        time_n = clock();
+
+        time_t += ((float)(time_n - time_l))/(float)CLOCKS_PER_SEC;
+        time_l = time_n;
+
         bytes = recv(c_socket, buffer, BUFFER_SIZE, 0);
 
         if(bytes <= 0)
@@ -103,7 +118,15 @@ int main(int argc, char **argv)
 
         memset(buffer, 0, BUFFER_SIZE);
 
-        printf("\rreceived: %" PRIu64 " ", total_bytes);
+        bps_t += bytes;
+        if (time_t >= 1.)
+        {
+            bps = ((float)bps_t)/time_t;
+            time_t = .0;
+            bps_t = 0;
+        }
+
+        printf("\rreceived: %14" PRIu64 " bytes | %10i B/s", total_bytes, bps);
 
     } while(bytes > 0);
 
