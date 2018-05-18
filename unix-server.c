@@ -88,7 +88,7 @@ int main(int argc, char **argv)
     char buffer[BUFFER_SIZE];
     memset(buffer, 0, BUFFER_SIZE);
 
-    int total_bytes = 0;
+    uint64_t total_bytes = 0;
 
     int bytes = 0;
     do
@@ -103,7 +103,7 @@ int main(int argc, char **argv)
 
         memset(buffer, 0, BUFFER_SIZE);
 
-        printf("\rreceived: %i", total_bytes);
+        printf("\rreceived: %" PRIu64 " ", total_bytes);
 
     } while(bytes > 0);
 
